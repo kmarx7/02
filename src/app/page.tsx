@@ -61,11 +61,10 @@ export default function Home() {
           now={now}
           state={state}
           secondsUntilNext={secondsUntilNext}
+          settings={settings}
           permissionGranted={permission === "granted"}
           onRequestPermission={requestPermission}
           onOpenSettings={() => setShowSettings(true)}
-          breakMinute={settings.breakMinute}
-          wrapupMinute={settings.wrapupMinute}
         />
       )}
 

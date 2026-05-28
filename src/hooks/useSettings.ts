@@ -3,16 +3,31 @@
 import { useState, useEffect, useCallback } from "react";
 
 export interface Settings {
+  startHour: number;
+  endHour: number;
   breakMinute: number;
   wrapupMinute: number;
 }
 
 const DEFAULT_SETTINGS: Settings = {
+  startHour: 9,
+  endHour: 18,
   breakMinute: 40,
   wrapupMinute: 50,
 };
 
 const STORAGE_KEY = "break-timer-settings";
+
+function isValid(s: unknown): s is Settings {
+  if (!s || typeof s !== "object") return false;
+  const o = s as Record<string, unknown>;
+  return (
+    typeof o.startHour === "number" &&
+    typeof o.endHour === "number" &&
+    typeof o.breakMinute === "number" &&
+    typeof o.wrapupMinute === "number"
+  );
+}
 
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -22,16 +37,11 @@ export function useSettings() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as Settings;
-        if (
-          typeof parsed.breakMinute === "number" &&
-          typeof parsed.wrapupMinute === "number"
-        ) {
-          setSettings(parsed);
-        }
+        const parsed = JSON.parse(saved);
+        if (isValid(parsed)) setSettings(parsed);
       }
     } catch {
-      // ignore parse errors
+      // ignore
     }
     setLoaded(true);
   }, []);
@@ -41,7 +51,7 @@ export function useSettings() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {
-      // ignore storage errors
+      // ignore
     }
   }, []);
 

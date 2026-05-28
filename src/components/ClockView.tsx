@@ -1,16 +1,16 @@
 "use client";
 
 import { TimerState } from "@/hooks/useTimer";
+import type { Settings } from "@/hooks/useSettings";
 
 interface ClockViewProps {
   now: Date;
   state: TimerState;
   secondsUntilNext: number;
+  settings: Settings;
   permissionGranted: boolean;
   onRequestPermission: () => void;
   onOpenSettings: () => void;
-  breakMinute: number;
-  wrapupMinute: number;
 }
 
 function formatTime(date: Date) {
@@ -31,16 +31,27 @@ function formatDate(date: Date) {
   });
 }
 
-function formatCountdown(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}분 ${String(s).padStart(2, "0")}초`;
+function formatCountdown(totalSeconds: number) {
+  if (totalSeconds <= 0) return "0초";
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) return `${h}시간 ${m}분 ${String(s).padStart(2, "0")}초`;
+  if (m > 0) return `${m}분 ${String(s).padStart(2, "0")}초`;
+  return `${s}초`;
 }
 
-const STATE_INFO: Record<TimerState, { label: string; next: string; color: string; bg: string }> = {
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+const STATE_INFO: Record<
+  TimerState,
+  { label: string; next: string; color: string; bg: string }
+> = {
   normal: {
     label: "수업 진행 중",
-    next: "휴식까지",
+    next: "다음 휴식까지",
     color: "text-blue-300",
     bg: "bg-blue-500/20",
   },
@@ -62,13 +73,28 @@ export default function ClockView({
   now,
   state,
   secondsUntilNext,
+  settings,
   permissionGranted,
   onRequestPermission,
   onOpenSettings,
-  breakMinute,
-  wrapupMinute,
 }: ClockViewProps) {
   const info = STATE_INFO[state];
+
+  // 현재 시각 기준 앞 2건 + 뒤 2건 슬롯 생성
+  const nowH = now.getHours();
+  const nowM = now.getMinutes();
+
+  const allSlots: { hhmm: string; h: number; m: number; type: "break" | "wrapup" }[] = [];
+  for (let h = settings.startHour; h < settings.endHour; h++) {
+    allSlots.push({ hhmm: `${pad(h)}:${pad(settings.breakMinute)}`, h, m: settings.breakMinute, type: "break" });
+    allSlots.push({ hhmm: `${pad(h)}:${pad(settings.wrapupMinute)}`, h, m: settings.wrapupMinute, type: "wrapup" });
+  }
+
+  const nowTotal = nowH * 60 + nowM;
+  const upcomingIdx = allSlots.findIndex((s) => s.h * 60 + s.m > nowTotal);
+  const visibleSlots = upcomingIdx === -1
+    ? allSlots.slice(-4)
+    : allSlots.slice(Math.max(0, upcomingIdx - 1), upcomingIdx + 3);
 
   return (
     <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white select-none relative">
@@ -90,7 +116,7 @@ export default function ClockView({
         {info.label}
       </div>
 
-      {/* 다음 이벤트 카운트다운 */}
+      {/* 카운트다운 */}
       <div className="text-center animate-slide-up">
         <p className="text-slate-400 text-sm mb-1">{info.next}</p>
         <p className={`text-3xl font-semibold tabular-nums ${info.color}`}>
@@ -98,26 +124,32 @@ export default function ClockView({
         </p>
       </div>
 
-      {/* 시간표 안내 */}
-      <div className="mt-12 flex gap-6 text-slate-500 text-sm animate-slide-up">
-        <div className="text-center">
-          <div className="text-xs mb-1">매 시각</div>
-          <div className="text-white font-mono">:00</div>
-          <div className="text-xs mt-1">수업 시작</div>
+      {/* 오늘 스케줄 미니 타임라인 */}
+      {visibleSlots.length > 0 && (
+        <div className="mt-12 flex items-center gap-3 animate-slide-up">
+          {visibleSlots.map((slot, i) => {
+            const isPast = slot.h * 60 + slot.m <= nowTotal;
+            const isNext = !isPast && visibleSlots.findIndex((s) => s.h * 60 + s.m > nowTotal) === i;
+            return (
+              <div key={slot.hhmm} className="flex items-center gap-3">
+                {i > 0 && <div className="w-6 h-px bg-slate-700" />}
+                <div className={`text-center ${isPast ? "opacity-30" : ""}`}>
+                  <div
+                    className={`font-mono text-sm font-bold ${
+                      slot.type === "break" ? "text-green-400" : "text-orange-400"
+                    } ${isNext ? "ring-1 ring-current rounded px-1" : ""}`}
+                  >
+                    {slot.hhmm}
+                  </div>
+                  <div className="text-slate-500 text-xs mt-0.5">
+                    {slot.type === "break" ? "휴식" : "마무리"}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="w-px bg-slate-700" />
-        <div className="text-center">
-          <div className="text-xs mb-1">매 시각</div>
-          <div className="text-green-400 font-mono">:{String(breakMinute).padStart(2, "0")}</div>
-          <div className="text-xs mt-1">휴식 시작</div>
-        </div>
-        <div className="w-px bg-slate-700" />
-        <div className="text-center">
-          <div className="text-xs mb-1">매 시각</div>
-          <div className="text-orange-400 font-mono">:{String(wrapupMinute).padStart(2, "0")}</div>
-          <div className="text-xs mt-1">수업 마무리</div>
-        </div>
-      </div>
+      )}
 
       {/* 설정 버튼 */}
       <button
@@ -125,9 +157,19 @@ export default function ClockView({
         className="absolute top-6 right-6 text-slate-500 hover:text-slate-300 transition-colors p-2 rounded-lg hover:bg-white/5"
         title="시간 설정"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-          <circle cx="12" cy="12" r="3"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+          <circle cx="12" cy="12" r="3" />
         </svg>
       </button>
 
@@ -135,7 +177,7 @@ export default function ClockView({
       {!permissionGranted && (
         <button
           onClick={onRequestPermission}
-          className="mt-10 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-sm text-slate-300 border border-white/10 transition-all animate-slide-up"
+          className="absolute bottom-8 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-sm text-slate-300 border border-white/10 transition-all"
         >
           🔔 브라우저 알림 허용
         </button>
