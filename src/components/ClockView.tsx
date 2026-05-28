@@ -8,6 +8,9 @@ interface ClockViewProps {
   secondsUntilNext: number;
   permissionGranted: boolean;
   onRequestPermission: () => void;
+  onOpenSettings: () => void;
+  breakMinute: number;
+  wrapupMinute: number;
 }
 
 function formatTime(date: Date) {
@@ -61,11 +64,14 @@ export default function ClockView({
   secondsUntilNext,
   permissionGranted,
   onRequestPermission,
+  onOpenSettings,
+  breakMinute,
+  wrapupMinute,
 }: ClockViewProps) {
   const info = STATE_INFO[state];
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white select-none">
+    <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white select-none relative">
       {/* 날짜 */}
       <p className="text-slate-400 text-lg mb-2 animate-slide-up">
         {formatDate(now)}
@@ -96,22 +102,34 @@ export default function ClockView({
       <div className="mt-12 flex gap-6 text-slate-500 text-sm animate-slide-up">
         <div className="text-center">
           <div className="text-xs mb-1">매 시각</div>
-          <div className="text-white font-mono">:40</div>
+          <div className="text-white font-mono">:00</div>
+          <div className="text-xs mt-1">수업 시작</div>
+        </div>
+        <div className="w-px bg-slate-700" />
+        <div className="text-center">
+          <div className="text-xs mb-1">매 시각</div>
+          <div className="text-green-400 font-mono">:{String(breakMinute).padStart(2, "0")}</div>
           <div className="text-xs mt-1">휴식 시작</div>
         </div>
         <div className="w-px bg-slate-700" />
         <div className="text-center">
           <div className="text-xs mb-1">매 시각</div>
-          <div className="text-white font-mono">:50</div>
+          <div className="text-orange-400 font-mono">:{String(wrapupMinute).padStart(2, "0")}</div>
           <div className="text-xs mt-1">수업 마무리</div>
         </div>
-        <div className="w-px bg-slate-700" />
-        <div className="text-center">
-          <div className="text-xs mb-1">매 시각</div>
-          <div className="text-white font-mono">:00</div>
-          <div className="text-xs mt-1">수업 시작</div>
-        </div>
       </div>
+
+      {/* 설정 버튼 */}
+      <button
+        onClick={onOpenSettings}
+        className="absolute top-6 right-6 text-slate-500 hover:text-slate-300 transition-colors p-2 rounded-lg hover:bg-white/5"
+        title="시간 설정"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
 
       {/* 알림 권한 요청 */}
       {!permissionGranted && (
