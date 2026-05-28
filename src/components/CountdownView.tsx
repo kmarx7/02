@@ -171,7 +171,7 @@ export default function CountdownView({
       {/* 프리셋 버튼 (idle 상태) */}
       {isIdle && (
         <div className="flex gap-2 mb-10 flex-wrap justify-center px-8">
-          {[5, 10, 15, 20, 25, 30, 45, 60].map((min) => (
+          {[5, 15, 30, 45, 60].map((min) => (
             <button
               key={min}
               onClick={() => onSetDuration(min * 60)}
