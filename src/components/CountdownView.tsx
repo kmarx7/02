@@ -138,27 +138,27 @@ export default function CountdownView({
 
       {/* 시간 설정 (idle 상태에서만) */}
       {isIdle && (
-        <div className="flex items-center gap-3 mb-10 animate-slide-up">
+        <div className="flex items-center gap-2 mb-6 animate-slide-up">
           <div className="flex flex-col items-center">
             <label className="text-slate-500 text-xs mb-1">시간</label>
             <select
               value={hours}
               onChange={(e) => handleHourChange(Number(e.target.value))}
-              className="bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white font-mono text-2xl focus:outline-none focus:border-blue-500 transition-colors text-center"
+              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white font-mono text-lg focus:outline-none focus:border-blue-500 transition-colors text-center"
             >
               {HOUR_OPTIONS.map((h) => (
                 <option key={h} value={h}>{String(h).padStart(2, "0")}</option>
               ))}
             </select>
           </div>
-          <span className="text-slate-400 text-3xl font-bold mt-4">:</span>
+          <span className="text-slate-400 text-2xl font-bold mt-4">:</span>
           <div className="flex flex-col items-center">
             <label className="text-slate-500 text-xs mb-1">분 (5분 단위)</label>
             <select
               value={hours === 24 ? 0 : minutes}
               onChange={(e) => handleMinuteChange(Number(e.target.value))}
               disabled={hours === 24}
-              className="bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white font-mono text-2xl focus:outline-none focus:border-blue-500 transition-colors text-center disabled:opacity-40"
+              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white font-mono text-lg focus:outline-none focus:border-blue-500 transition-colors text-center disabled:opacity-40"
             >
               {MINUTE_OPTIONS.map((m) => (
                 <option key={m} value={m}>{String(m).padStart(2, "0")}</option>
@@ -170,12 +170,12 @@ export default function CountdownView({
 
       {/* 프리셋 버튼 (idle 상태) */}
       {isIdle && (
-        <div className="flex gap-2 mb-10 flex-wrap justify-center px-8">
+        <div className="flex gap-1.5 mb-6 flex-wrap justify-center px-8">
           {[5, 15, 30, 45, 60].map((min) => (
             <button
               key={min}
               onClick={() => onSetDuration(min * 60)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                 durationSeconds === min * 60
                   ? "bg-blue-600 border-blue-500 text-white"
                   : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
@@ -188,12 +188,12 @@ export default function CountdownView({
       )}
 
       {/* 컨트롤 버튼 */}
-      <div className="flex gap-4 animate-slide-up">
+      <div className="flex gap-3 animate-slide-up">
         {(isIdle || status === "paused") && (
           <button
             onClick={onStart}
             disabled={durationSeconds === 0}
-            className="px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {status === "paused" ? "계속" : "시작"}
           </button>
@@ -201,7 +201,7 @@ export default function CountdownView({
         {isRunning && (
           <button
             onClick={onPause}
-            className="px-10 py-4 rounded-2xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-lg transition-colors"
+            className="px-8 py-3 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-base transition-colors"
           >
             일시정지
           </button>
@@ -209,7 +209,7 @@ export default function CountdownView({
         {!isIdle && (
           <button
             onClick={onReset}
-            className="px-6 py-4 rounded-2xl border border-slate-600 hover:border-slate-400 text-slate-400 hover:text-slate-200 font-medium text-lg transition-colors"
+            className="px-5 py-3 rounded-xl border border-slate-600 hover:border-slate-400 text-slate-400 hover:text-slate-200 font-medium text-base transition-colors"
           >
             초기화
           </button>
